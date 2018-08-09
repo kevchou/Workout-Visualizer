@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+    #weightpath {
+        stroke: steelblue;
+        stroke-width: 2;
+        fill: none;
+    }
+
+    .axis path {
+        fill: none;
+        stroke: black;
+        stroke-width: 1;
+        shape-rendering: crispEdges;
+    }
+
+    path {
+        stroke: steelblue;
+        stroke-width: 2;
+        fill: none;
+    }
+</style>
+
+<body>
+
+    <button id="uncheckAll" onClick="uncheckAll()">Remove</button>
+
+    <div>
+        {% for d in data %}
+        <input type="checkbox" class="myCheckbox" value="{{ d[0] }}"> {{ d[0] }}
+        <br> {% endfor %}
+    </div>
+
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="{{ url_for('static', filename='js/line.js') }}"></script>
+
+    <script>
+    function uncheckAll() {
+        d3.selectAll(".myCheckbox").property('checked', false);
+        d3.selectAll(".line").remove();
+    }
+    </script>
+
+</body>

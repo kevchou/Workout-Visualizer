@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+
+<head>
+    <style>
+        .daylabel {
+            fill: #AAA
+        }
+
+        .monthlabel {
+            fill: #AAA
+        }
+    </style>
+</head>
+
+<body>
+
+
+    <div id="options">
+        <button id="all" onClick="refreshGraph(this.id)">All</button>
+        <button id="pu" onClick="refreshGraph(this.id)">Power Upper</button>
+        <button id="pl" onClick="refreshGraph(this.id)">Power Lower</button>
+        <button id="hu" onClick="refreshGraph(this.id)">Hypertrophy Upper</button>
+        <button id="hl" onClick="refreshGraph(this.id)">Hypertrophy Lower</button>
+    </div>
+
+
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script>
+
+        function drawCalendar(yearRange) {
+
+            var width = 160,
+                height = 1500,
+                cellSize = 17;
+
+            // Adds an SVG for each YEAR
+            var svg = d3.select("body")
+                .selectAll("svg")
+                .data(yearRange)
+                .enter().append("svg")
+                .attr("width", width)
+                .attr("height", height)
+                .append("g")
+                .attr("transform", "translate("
+                + (width - cellSize * 7) / 2  // center the calendar week
+                + ","
+                + 30 // padding for year title
+                + ")");
+
+            /************************************************************
+             * 4. title for each year
+             ************************************************************/
+            svg.append("text")
+                .attr("transform", "translate(" + cellSize * 3.5 + "," + 0 + ")")
+                .attr("font-family", "sans-serif")
+                .attr("font-size", 24)
+                .attr("text-anchor", "middle")
+                .text(function (d) { return d; });
+
+            /************************************************************
+             * 3. draws each day square
+             ************************************************************/
+            var monthg = svg.append("g")
+                .attr("transform", "translate(0," + 20 + ")")
+                .attr("fill", "#fff")
+                .selectAll("g")
+
+                // for each year...
+                .data(function (d) { return d3.timeMonths(new Date(d, 0, 1), new Date(d + 1, 0, 1)); }) // returns every month of year
+                .enter().append("g")
+                .attr("transform", function (d) { return "translate(" + 0 + "," + d3.timeMonth.count(d3.timeYear(d), d) * cellSize * 7 + ")"; })
+
+                // For each month...
+                .each(function (d) {
+
+                    // Add month label
+                    var nWeeksInMonth = d3.timeWeek.count(d, new Date(d.getFullYear(), d.getMonth() + 1, 1)) + 1;
+
+                    d3.select(this).selectAll(".monthlabel")
+                    .data([d3.timeFormat("%b")(d)])
+                    .enter().append("text")
+                    .attr("class", "monthlabel")
+                    .attr("transform", function (d, i) { 
+                        return "translate(-5," + nWeeksInMonth/2 * cellSize + ") " +
+                                "rotate(-90)"; })
+                        .attr("font-family", "sans-serif")
+                        .attr("font-size", 12)
+                        .attr("text-anchor", "middle")
+                        .text(function (d) { return d; })
+                    ;
+
+                    // Day of Week label above each month
+                    d3.select(this).selectAll(".daylabel")
+                        .data(['S', 'M', 'T', 'W', 'Th', 'F', 'S'])
+                        .enter().append('text')
+                        .attr("class", "daylabel")
+                        .attr("transform", function (d, i) { return "translate(" + ((i + .5) * cellSize) + "," + -4 + ")"; })
+                        .attr("font-family", "sans-serif")
+                        .attr("font-size", 12)
+                        .attr("text-anchor", "middle")
+                        .text(function (d) { return d; });
+
+                    // Create a month rect
+                    var days_in_month = d3.select(this)
+                        .selectAll("rect")
+                        .data(function (d) {
+                            // Return every day of month for data
+                            return d3.timeDays(new Date(d.getFullYear(), d.getMonth(), 1),
+                                new Date(d.getFullYear(), d.getMonth() + 1, 1));
+                        });
+
+                    // Draws a square for each day
+                    days_in_month.enter()
+                        .append("rect")
+                        .attr("width", cellSize)
+                        .attr("height", cellSize)
+                        .attr("y", function (d) { return d3.timeWeek.count(d3.timeMonth(d), d) * cellSize; })
+                        .attr("x", function (d) { return d.getDay() * cellSize; })
+                        .attr("stroke", "#ccc")
+                        ;
+
+                    d3.select(this).append("path")
+                        .attr("fill", "none")
+                        .attr("stroke", "#000")
+                        .attr("d", pathMonth);
+                });
+
+            // Draws a path around month. Input is a month (ie. 2016-01-01)
+            function pathMonth(t0) {
+                var t1 = new Date(t0.getFullYear(), t0.getMonth() + 1, 0),
+                    d0 = t0.getDay(),
+                    w0 = d3.timeWeek.count(d3.timeMonth(t0), t0),
+                    d1 = t1.getDay(),
+                    w1 = d3.timeWeek.count(d3.timeMonth(t1), t1);
+
+                return "M" + d0 * cellSize + "," + w0 * cellSize
+                    + "H" + 7 * cellSize + "V" + w1 * cellSize
+                    + "H" + (d1 + 1) * cellSize + "V" + (w1 + 1) * cellSize
+                    + "H" + 0 * cellSize + "V" + (w0 + 1) * cellSize
+                    + "H" + d0 * cellSize + "Z";
+            }
+        }
+
+        var yearRange = d3.range(2016, 2018);
+        drawCalendar(yearRange);
+
+        /************************************************************
+         * 1. Loads gym csv and highlights each day 
+         ************************************************************/
+        var color = d3.scaleQuantize()
+            .domain([-0.05, 0.05])
+            .range(["#a50026", "#d73027", "#f46d43", "#fdae61", "#fee08b", "#ffffbf", "#d9ef8b", "#a6d96a", "#66bd63", "#1a9850", "#006837"]);
+
+
+
+        refreshGraph("all");
+
+
+        function refreshGraph(id) {
+
+            var workout = "";
+
+            if (id == "pu") {
+                workout = "workout/Power%20Upper"
+            } else if (id == "pl") {
+                workout = "workout/Power%20Lower"
+            } else if (id == "hu") {
+                workout = "workout/Hypertrophy%20Upper"
+            } else if (id == "hl") {
+                workout = "workout/Hypertrophy%20Lower"
+            } else if (id == "all") {
+                workout = "all"
+            }
+
+
+            // colors in event squares
+            d3.json("/data/" + workout, function (error, csv) {
+                if (error) throw error;
+
+                /* Creates an object that looks like 
+                   {2016-12-31: "1", 2017-01-01:"1", ...}
+                   */
+                var data = d3.nest()
+                    .key(function (d) { return d.date; })
+                    .rollup(function (d) { return d.length; })
+                    .object(csv);
+
+                d3.selectAll("rect")
+                    .attr("fill", function (d) { return "#FFF"; })
+
+                /* Fills in each day square with data from the csv*/
+                d3.selectAll("rect").filter(function (d) {
+                    return d3.timeFormat("%Y-%m-%d")(d) in data;
+                })
+                    .attr("fill", function (d) { return "#a50026"; })
+                    .append("title")
+                    .text(function (d) { return d; });
+            })
+        }
+    </script>
+</body>

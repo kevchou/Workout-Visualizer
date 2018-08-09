@@ -1,0 +1,4 @@
+.DS_Store
+workout.db
+*.pyc
+.vscode/settings.json

@@ -1,0 +1,17 @@
+<body>
+    <h1>Sign In</h1>
+    <form action="" method="post" name="login">
+        {{ form.hidden_tag() }}
+        <p>
+            Date: {{ form.date(size=20) }}
+            <br> Workout: {{ form.workout_name(size=10) }}
+            <br> Exercise: {{ form.exercise(size=10) }}
+            <br> Weight: {{ form.weight(size=5) }}
+            <br> Sets {{ form.sets(size=5) }}
+            <br> Reps {{ form.reps(size=5) }}
+        </p>
+        <p>
+            <input type="submit" value="submit">
+        </p>
+    </form>
+</body>

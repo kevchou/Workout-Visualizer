@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+  #weightpath {
+    stroke: steelblue;
+    stroke-width: 2;
+    fill: none;
+  }
+</style>
+
+<body>
+
+  <div id="options">
+    <button id="e1" onClick="refreshGraph(this.id)">Bench Press</button>
+    <button id="e2" onClick="refreshGraph(this.id)">Squats</button>
+    <button id="e3" onClick="refreshGraph(this.id)">Deadlift</button>
+  </div>
+
+  <input type="checkbox" class="myCheckbox" value="Bench Press"> Bench Press
+  <input type="checkbox" class="myCheckbox" value="Squat"> Squat
+  <input type="checkbox" class="myCheckbox" value="Deadlift"> Deadlift
+
+
+  <script src="https://d3js.org/d3.v4.min.js"></script>
+  <script>
+
+    var w = 600;
+    var h = 400;
+    var padding = 30;
+
+
+    var svg = d3.select("body").append("svg")
+      .attr("height", h)
+      .attr("width", w);
+
+    var x = d3.scaleTime()
+      .range([padding, w - padding * 2]);
+
+    var y = d3.scaleLinear()
+      .range([h - padding, padding]);
+
+    var parseTime = d3.timeParse("%Y-%m-%d");
+
+
+    function parseData(data) {
+      data.forEach(function (d) {
+        d.date = parseTime(d.date);
+        d.weight = +d.weight;
+      });
+      return data;
+    }
+
+    // Add line for the weight 
+    var weightpath = svg.append("path")
+      .attr("id", "weightpath");
+
+
+    var path = d3.line()
+      .x(function (d) { return x(d.date); })
+      .y(function (d) { return y(d.weight); });
+
+    // Add the X Axis
+    var xaxis = svg.append("g")
+      .attr("id", "xaxis");
+
+    // Add the Y Axis
+    var yaxis = svg.append("g")
+      .attr("id", "yaxis")
+
+    x.domain([d3.timeParse("%Y-%m-%d")("2016-01-01"), d3.timeParse("%Y-%m-%d")("2017-12-31")]);
+    y.domain([0, 100]);
+
+    xaxis.attr("transform", "translate(0," + (h - padding) + ")")
+      .call(d3.axisBottom(x));
+
+    yaxis.attr("transform", "translate(" + padding + ",0)")
+      .call(d3.axisLeft(y));
+
+    function refreshGraph(id) {
+
+      var exercise;
+
+      if (id == "e1") {
+        exercise = "exercise/Bench%20Press"
+      } else if (id == "e2") {
+        exercise = "exercise/Squats"
+      } else if (id == "e3") {
+        exercise = "exercise/Deadlift"
+      }
+
+      d3.json("/data/" + exercise, function (error, data) {
+        if (error) throw error;
+
+        data = parseData(data);
+
+        var t = d3.transition().duration();
+
+        // Update Axes
+        x.domain(d3.extent(data, function (d) { return d.date; }));
+        y.domain([0, d3.max(data, function (d) { return d.weight; }) * 1.05]);
+
+        xaxis//.attr("transform", "translate(0," + (h - padding) + ")")
+          .transition(t)
+          .call(d3.axisBottom(x));
+
+        yaxis//.attr("transform", "translate(" + padding + ",0)")
+          .transition(t)
+          .call(d3.axisLeft(y));
+
+        weightpath.datum(data, function (d) { return d.date; })
+          .transition()
+          .attr("d", path);
+      });
+
+    }
+
+
+    d3.selectAll(".myCheckbox").on("change", update);
+    update();
+
+    function update() {
+
+      var choices = [];
+
+      d3.selectAll(".myCheckbox").each(function (d) {
+        
+        cb = d3.select(this);
+
+        if (cb.property("checked")) {
+          choices.push(cb.property("value"));
+        }
+      });
+
+      drawGraph(choices);
+    }
+
+    function drawGraph(choices) {
+      
+      d3.json('/data/multi/' + choices, function (error, data) {
+        if (error) throw error;
+      });
+
+    }
+
+    var chartData = {{ data | safe }};
+    console.log(chartData)
+  </script>
+</body>
