@@ -18,25 +18,8 @@ import csv
 from decimal import Decimal
 
 
-# Import PHUL csv
-reader = csv.DictReader(open('phul.csv'))
-
-workouts = []
-for row in reader:
-    workouts.append(
-        tWorkout(date=datetime.strptime(row['Date'], "%Y-%m-%d"),
-             workout_name=row['Workout'],
-             exercise=row['Exercise'],
-             weight=Decimal(row['Weight']),
-             sets=int(row['Sets']),
-             reps=int(row['Reps']))
-          )
-
-session.add_all(workouts)
-session.commit()
-
-# Import 5x5 csv
-reader = csv.DictReader(open('5x5.csv'))
+# Import workout csv
+reader = csv.DictReader(open('workout.csv'))
 
 workouts = []
 for row in reader:
