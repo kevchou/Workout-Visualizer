@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, url_for, redirect
 from flask_sqlalchemy import SQLAlchemy
 import requests
 from datetime import datetime
@@ -19,10 +19,13 @@ from flask import render_template
 # HTML Pages
 ###################################################################
 
+
+# Calendar View
 @app.route("/calendar")
 def calendar_test():
     return render_template('calendar.html')
 
+# Line Graph
 @app.route("/line")
 def line_graph_test():
     data = db.session.query(tWorkout.exercise).distinct()
@@ -34,13 +37,26 @@ def line_graph_test():
 def add():
     form = AddWorkoutForm()
 
-    if form.validate_on_submit():
-        print("date:", form.date.data)
-        print("exercise:", form.exercise.data)
-        print("workout_name:", form.workout_name.data)
-        print("weight:", form.weight.data)
-        print("sets:", form.sets.data)
-        print("reps:", form.reps.data)
+    if request.method == 'POST' and form.validate_on_submit():
+
+        date = form.date.data
+        workout_name = form.workout_name.data
+        exercise = form.exercise.data
+        weight = form.weight.data
+        sets = form.sets.data
+        reps = form.reps.data
+
+        new_workout = tWorkout(date=date,
+                               workout_name=workout_name,
+                               exercise=exercise,
+                               weight=weight,
+                               sets=sets,
+                               reps=reps)
+
+        db.session.add(new_workout)
+        db.session.commit()
+
+        return redirect(url_for('add'))
 
     return render_template('add_workout.html', form=form)
 
@@ -81,7 +97,7 @@ def show_exercises(exercises):
         .all()
     return jsonify([x.serialize for x in t1])
 
-# Add an exercise
+# Add an exercise using POST request
 @app.route('/add_data', methods=["GET", "POST"])
 def add_data():
     if request.method == "GET":
